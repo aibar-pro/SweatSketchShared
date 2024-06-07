@@ -5,16 +5,16 @@ Pod::Spec.new do |spec|
     spec.source                   = { :http=> ''}
     spec.authors                  = ''
     spec.license                  = ''
-    spec.summary                  = 'Some description for the Shared Module'
-    spec.vendored_frameworks      = 'build/cocoapods/framework/shared.framework'
+    spec.summary                  = 'Kotlin Multiplatform module for SweatSketch'
+    spec.vendored_frameworks      = 'build/cocoapods/framework/SweatSketchSharedModule.framework'
     spec.libraries                = 'c++'
-    spec.ios.deployment_target    = '14.1'
+    spec.ios.deployment_target    = '14.0'
                 
                 
-    if !Dir.exist?('build/cocoapods/framework/shared.framework') || Dir.empty?('build/cocoapods/framework/shared.framework')
+    if !Dir.exist?('build/cocoapods/framework/SweatSketchSharedModule.framework') || Dir.empty?('build/cocoapods/framework/SweatSketchSharedModule.framework')
         raise "
 
-        Kotlin framework 'shared' doesn't exist yet, so a proper Xcode project can't be generated.
+        Kotlin framework 'SweatSketchSharedModule' doesn't exist yet, so a proper Xcode project can't be generated.
         'pod install' should be executed after running ':generateDummyFramework' Gradle task:
 
             ./gradlew :shared:generateDummyFramework
@@ -28,7 +28,7 @@ Pod::Spec.new do |spec|
                 
     spec.pod_target_xcconfig = {
         'KOTLIN_PROJECT_PATH' => ':shared',
-        'PRODUCT_MODULE_NAME' => 'shared',
+        'PRODUCT_MODULE_NAME' => 'SweatSketchSharedModule',
     }
                 
     spec.script_phases = [
