@@ -25,7 +25,7 @@ kotlin {
         ios.deploymentTarget = "14.0"
         framework {
             baseName = "SweatSketchSharedModule"
-            isStatic = true
+            isStatic = false
         }
     }
     
@@ -33,6 +33,8 @@ kotlin {
         commonMain.dependencies {
             implementation(libs.kotlin.serialization)
             implementation(libs.ktor.client.core)
+            implementation(libs.ktor.client.content.negotiation)
+            implementation(libs.ktor.client.logging)
             implementation(libs.koin.core)
         }
         androidMain.dependencies {
