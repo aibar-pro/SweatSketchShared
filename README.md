@@ -1,4 +1,4 @@
-#  SweatSketch: Sketch, Sweat, and Succeed. Shared Kotlin Multiplatform Library
+#  SweatSketch: Kotlin Multiplatform Shared Library
 The SweatSketch: Sketch, Sweat, and Succeed is a lightweight app for taking gym notes about workout programs and weight-lifting results.
 
 This is a Kotlin Multiplatform library to support my iOS application, SweatSketch.
