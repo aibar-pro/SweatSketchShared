@@ -50,5 +50,4 @@ class UserRepositoryImpl(private val api: UserApi) : UserRepository {
             throw e
         }
     }
-
 }

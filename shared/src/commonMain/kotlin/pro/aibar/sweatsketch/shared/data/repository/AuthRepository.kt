@@ -10,4 +10,6 @@ interface AuthRepository {
     suspend fun login(userCredential: UserCredentialModel): AuthTokenModel
     @Throws(ApiException::class, Exception::class)
     suspend fun refreshToken(refreshTokenModel: RefreshTokenModel): AuthTokenModel
+    @Throws(ApiException::class, Exception::class)
+    suspend fun isLoggedIn(): Boolean
 }

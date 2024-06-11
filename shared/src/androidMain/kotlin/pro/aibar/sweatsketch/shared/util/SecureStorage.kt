@@ -28,4 +28,8 @@ actual object SecureStorage {
     actual fun getRefreshToken(): String? {
         return sharedPreferences.getString(REFRESH_TOKEN_KEY, null)
     }
+
+    actual fun clearRefreshToken() {
+        sharedPreferences.edit().remove(REFRESH_TOKEN_KEY).apply()
+    }
 }

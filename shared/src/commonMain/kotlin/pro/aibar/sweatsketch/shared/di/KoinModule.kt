@@ -28,9 +28,9 @@ fun createKoinModule(baseUrl: String): Module {
             }
         } }
         single { TokenManager }
-        single<AuthApi> { AuthApiImpl(get(), baseUrl) }
+        single<AuthApi> { AuthApiImpl(get(), baseUrl, get()) }
         single<AuthRepository> { AuthRepositoryImpl(get()) }
-        single<UserApi> { UserApiImpl(get(), baseUrl, get(), get()) }
+        single<UserApi> { UserApiImpl(get(), baseUrl, get()) }
         single<UserRepository> { UserRepositoryImpl(get()) }
     }
 }
