@@ -16,7 +16,7 @@ import pro.aibar.sweatsketch.shared.util.TokenManager
 
 interface AuthApi {
     suspend fun login(userCredential: UserCredentialModel): AuthTokenModel
-    suspend fun refreshToken(refreshTokenModel: RefreshTokenModel): AuthTokenModel
+    suspend fun refreshToken(): AuthTokenModel
     suspend fun getValidAccessToken(): String
 }
 
@@ -27,8 +27,7 @@ class AuthApiImpl(
 ) : AuthApi {
     override suspend fun getValidAccessToken(): String {
         if (tokenManager.isAccessTokenExpired() || tokenManager.getAccessToken() == null) {
-            val refreshToken = tokenManager.getRefreshToken() ?: throw ApiException(HttpStatusCode.Unauthorized, "No refresh token found. Login required")
-            val newToken = refreshToken(RefreshTokenModel(refreshToken))
+            val newToken = refreshToken()
             saveToken(newToken)
         }
         return tokenManager.getAccessToken() ?: throw ApiException(HttpStatusCode.Unauthorized, "No access token found")
@@ -55,11 +54,12 @@ class AuthApiImpl(
         }
     }
 
-    override suspend fun refreshToken(refreshTokenModel: RefreshTokenModel): AuthTokenModel {
+    override suspend fun refreshToken(): AuthTokenModel {
+        val refreshToken = tokenManager.getRefreshToken() ?: throw ApiException(HttpStatusCode.Unauthorized, "No refresh token found in storage")
         return try {
             val response: HttpResponse = client.post("$baseUrl/auth/refresh-token") {
                 contentType(ContentType.Application.Json)
-                setBody(refreshTokenModel)
+                setBody(RefreshTokenModel(refreshToken))
             }
             if (response.status == HttpStatusCode.OK) {
                 saveToken(response.body())
