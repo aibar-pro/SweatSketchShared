@@ -13,8 +13,6 @@ class AuthRepositoryImpl(private val api: AuthApi) : AuthRepository {
     override suspend fun login(userCredential: UserCredentialModel): AuthTokenModel {
         return try {
             val token = api.login(userCredential)
-            TokenManager.saveAccessToken(token.accessToken, token.expiresIn)
-            TokenManager.saveRefreshToken(token.refreshToken)
             token
         } catch (e: ApiException) {
             println("API exception: ${e.status} - ${e.message}")
@@ -30,8 +28,6 @@ class AuthRepositoryImpl(private val api: AuthApi) : AuthRepository {
         val refreshToken = TokenManager.getRefreshToken() ?: throw ApiException(HttpStatusCode.Unauthorized, "No refresh token found in storage")
         return try {
             val token = api.refreshToken(RefreshTokenModel(refreshToken))
-            TokenManager.saveAccessToken(token.accessToken, token.expiresIn)
-            TokenManager.saveRefreshToken(token.refreshToken)
             token
         } catch (e: ApiException) {
             println("API exception: ${e.status} - ${e.message}")
@@ -42,5 +38,12 @@ class AuthRepositoryImpl(private val api: AuthApi) : AuthRepository {
         }
     }
 
-
+    @Throws(ApiException::class, Exception::class)
+    override suspend fun isLoggedIn(): Boolean {
+        return try {
+            api.getValidAccessToken() != null
+        } catch (e: ApiException) {
+            false
+        }
+    }
 }

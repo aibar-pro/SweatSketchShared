@@ -24,4 +24,10 @@ object TokenManager {
     fun getRefreshToken(): String? {
         return SecureStorage.getRefreshToken()
     }
+
+    fun clearTokens() {
+        accessToken = null
+        accessTokenExpiresAt = 0u
+        SecureStorage.clearRefreshToken()
+    }
 }

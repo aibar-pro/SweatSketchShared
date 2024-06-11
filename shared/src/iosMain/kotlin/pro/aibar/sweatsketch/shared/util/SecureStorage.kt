@@ -15,4 +15,9 @@ actual object SecureStorage {
         val userDefaults = NSUserDefaults.standardUserDefaults
         return userDefaults.stringForKey(refreshTokenKey)
     }
+
+    actual fun clearRefreshToken() {
+        val userDefaults = NSUserDefaults.standardUserDefaults
+        userDefaults.removeObjectForKey(refreshTokenKey)
+    }
 }
