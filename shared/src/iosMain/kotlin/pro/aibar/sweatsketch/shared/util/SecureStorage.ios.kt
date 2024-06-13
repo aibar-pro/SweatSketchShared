@@ -3,10 +3,10 @@ package pro.aibar.sweatsketch.shared.util
 import platform.Foundation.NSUserDefaults
 
 actual object SecureStorage {
+    // TODO: Implement Keychain
     private const val refreshTokenKey = "refreshToken"
 
     actual fun saveRefreshToken(token: String) {
-        // TODO: Implement Keychain
         val userDefaults = NSUserDefaults.standardUserDefaults
         userDefaults.setObject(token, forKey = refreshTokenKey)
     }

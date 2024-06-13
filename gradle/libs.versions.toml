@@ -8,6 +8,7 @@ androidx-activityCompose = "1.9.0"
 kotlin-serialization = "1.9.24"
 ktor = "2.3.10"
 koin = "3.2.0"
+securityCrypto = "1.1.0-alpha06"
 
 [libraries]
 kotlin-serialization = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
@@ -26,6 +27,7 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = 
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
 compose-foundation = { module = "androidx.compose.foundation:foundation", version.ref = "compose" }
 compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
