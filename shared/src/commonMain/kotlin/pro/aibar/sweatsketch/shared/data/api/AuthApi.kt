@@ -2,6 +2,7 @@ package pro.aibar.sweatsketch.shared.data.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
@@ -12,6 +13,7 @@ import io.ktor.http.contentType
 import pro.aibar.sweatsketch.shared.data.model.AuthTokenModel
 import pro.aibar.sweatsketch.shared.data.model.RefreshTokenModel
 import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
+import pro.aibar.sweatsketch.shared.util.KeyStorage
 import pro.aibar.sweatsketch.shared.util.TokenManager
 
 interface AuthApi {
@@ -39,7 +41,9 @@ class AuthApiImpl(
     }
     override suspend fun login(userCredential: UserCredentialModel): AuthTokenModel {
         return try {
+            val deviceId = KeyStorage.getDeviceId()
             val response: HttpResponse = client.post("$baseUrl/auth/login") {
+                header("deviceId", deviceId)
                 contentType(ContentType.Application.Json)
                 setBody(userCredential)
             }
