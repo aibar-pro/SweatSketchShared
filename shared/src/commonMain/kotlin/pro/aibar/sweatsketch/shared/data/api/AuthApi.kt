@@ -2,6 +2,7 @@ package pro.aibar.sweatsketch.shared.data.api
 
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
+import io.ktor.client.request.delete
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
@@ -11,7 +12,9 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import pro.aibar.sweatsketch.shared.data.model.AuthTokenModel
+import pro.aibar.sweatsketch.shared.data.model.DeleteSessionRequest
 import pro.aibar.sweatsketch.shared.data.model.RefreshTokenModel
+import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
 import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
 import pro.aibar.sweatsketch.shared.util.KeyStorage
 import pro.aibar.sweatsketch.shared.util.TokenManager
@@ -20,6 +23,7 @@ interface AuthApi {
     suspend fun login(userCredential: UserCredentialModel): AuthTokenModel
     suspend fun refreshToken(): AuthTokenModel
     suspend fun getValidAccessToken(): String
+    suspend fun logout(): ResponseMessageModel
 }
 
 class AuthApiImpl(
@@ -39,6 +43,7 @@ class AuthApiImpl(
         tokenManager.saveAccessToken(token.accessToken, token.expiresIn)
         tokenManager.saveRefreshToken(token.refreshToken)
     }
+
     override suspend fun login(userCredential: UserCredentialModel): AuthTokenModel {
         return try {
             val deviceId = KeyStorage.getDeviceId()
@@ -49,6 +54,7 @@ class AuthApiImpl(
             }
             if (response.status == HttpStatusCode.OK) {
                 saveToken(response.body())
+                KeyStorage.saveLogin(userCredential.login)
                 response.body()
             } else {
                 throw ApiException(response.status, response.bodyAsText())
@@ -67,6 +73,26 @@ class AuthApiImpl(
             }
             if (response.status == HttpStatusCode.OK) {
                 saveToken(response.body())
+                response.body()
+            } else {
+                throw ApiException(response.status, response.bodyAsText())
+            }
+        } catch (e: Exception) {
+            throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
+        }
+    }
+
+    override suspend fun logout(): ResponseMessageModel {
+        return try {
+            val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
+            val deviceId = KeyStorage.getDeviceId()
+            val response: HttpResponse = client.delete("$baseUrl/auth/sessions") {
+                header("deviceId", deviceId)
+                contentType(ContentType.Application.Json)
+                setBody(DeleteSessionRequest(login))
+            }
+            if (response.status == HttpStatusCode.OK) {
+                KeyStorage.clearLogin()
                 response.body()
             } else {
                 throw ApiException(response.status, response.bodyAsText())

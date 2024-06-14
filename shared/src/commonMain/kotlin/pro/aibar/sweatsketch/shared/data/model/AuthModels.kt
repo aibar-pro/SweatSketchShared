@@ -10,3 +10,6 @@ data class RefreshTokenModel(val refreshToken: String)
 
 @Serializable
 data class UserCredentialModel(val login: String, val password: String)
+
+@Serializable
+data class DeleteSessionRequest(val login: String)
