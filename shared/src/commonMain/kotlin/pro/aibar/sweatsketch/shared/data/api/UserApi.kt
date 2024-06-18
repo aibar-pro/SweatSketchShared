@@ -15,11 +15,12 @@ import io.ktor.http.contentType
 import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
 import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
 import pro.aibar.sweatsketch.shared.data.model.UserProfileModel
+import pro.aibar.sweatsketch.shared.util.KeyStorage
 
 interface UserApi {
     suspend fun createUser(userCredential: UserCredentialModel): ResponseMessageModel
     suspend fun createUserProfile(userProfile: UserProfileModel): ResponseMessageModel
-    suspend fun getUserProfile(login: String): UserProfileModel
+    suspend fun getUserProfile(): UserProfileModel
     suspend fun updateUserProfile(login: String, userProfile: UserProfileModel): ResponseMessageModel
 }
 
@@ -62,9 +63,10 @@ class UserApiImpl(
         }
     }
 
-    override suspend fun getUserProfile(login: String): UserProfileModel {
+    override suspend fun getUserProfile(): UserProfileModel {
         val accessToken = authApi.getValidAccessToken()
         return try {
+            val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
             val response: HttpResponse = client.get("$baseUrl/user/profile/$login") {
                 header("Authorization", "Bearer $accessToken")
                 contentType(ContentType.Application.Json)
