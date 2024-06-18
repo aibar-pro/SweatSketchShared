@@ -11,7 +11,7 @@ interface UserRepository {
     @Throws(ApiException::class, Exception::class)
     suspend fun createUserProfile(userProfile: UserProfileModel): ResponseMessageModel
     @Throws(ApiException::class, Exception::class)
-    suspend fun getUserProfile(login: String): UserProfileModel
+    suspend fun getUserProfile(): UserProfileModel
     @Throws(ApiException::class, Exception::class)
     suspend fun updateUserProfile(login: String, userProfile: UserProfileModel): ResponseMessageModel
 }
