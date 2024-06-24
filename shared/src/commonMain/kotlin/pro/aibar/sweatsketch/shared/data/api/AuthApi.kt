@@ -59,6 +59,8 @@ class AuthApiImpl(
             } else {
                 throw ApiException(response.status, response.bodyAsText())
             }
+        } catch (e: ApiException) {
+            throw e
         } catch (e: Exception) {
             throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
         }
@@ -77,6 +79,8 @@ class AuthApiImpl(
             } else {
                 throw ApiException(response.status, response.bodyAsText())
             }
+        } catch (e: ApiException) {
+            throw e
         } catch (e: Exception) {
             throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
         }
@@ -97,6 +101,8 @@ class AuthApiImpl(
             } else {
                 throw ApiException(response.status, response.bodyAsText())
             }
+        } catch (e: ApiException) {
+            throw e
         } catch (e: Exception) {
             throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
         }

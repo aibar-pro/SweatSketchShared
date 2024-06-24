@@ -6,7 +6,6 @@ import pro.aibar.sweatsketch.shared.data.api.UserApi
 import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
 import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
 import pro.aibar.sweatsketch.shared.data.model.UserProfileModel
-import pro.aibar.sweatsketch.shared.util.KeyStorage
 
 class UserRepositoryImpl(private val api: UserApi) : UserRepository {
     @Throws(ApiException::class, Exception::class)
@@ -14,8 +13,10 @@ class UserRepositoryImpl(private val api: UserApi) : UserRepository {
         return try {
             api.createUser(userCredential)
         } catch (e: ApiException) {
+            println("API exception: ${e.status} - ${e.message}")
             throw e
         } catch (e: Exception) {
+            println("Unexpected exception: ${e.message}")
             throw e
         }
     }
@@ -25,8 +26,10 @@ class UserRepositoryImpl(private val api: UserApi) : UserRepository {
         return try {
             api.createUserProfile(userProfile)
         } catch (e: ApiException) {
+            println("API exception: ${e.status} - ${e.message}")
             throw e
         } catch (e: Exception) {
+            println("Unexpected exception: ${e.message}")
             throw e
         }
     }
@@ -38,18 +41,21 @@ class UserRepositoryImpl(private val api: UserApi) : UserRepository {
         } catch (e: ApiException) {
             if (e.status == HttpStatusCode.NotFound) {
                 try {
-                    val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
-                    val newUserProfile = UserProfileModel(login)
-                    api.createUserProfile(newUserProfile)
+                    api.createDefaultUserProfile()
                     api.getUserProfile()
                 } catch (e: ApiException) {
+                    println("API exception: ${e.status} - ${e.message}")
                     throw e
                 } catch (e: Exception) {
+                    println("Unexpected exception: ${e.message}")
                     throw e
                 }
+            } else {
+                println("API exception: ${e.status} - ${e.message}")
+                throw e
             }
-            throw e
         } catch (e: Exception) {
+            println("Unexpected exception: ${e.message}")
             throw e
         }
     }
@@ -59,8 +65,10 @@ class UserRepositoryImpl(private val api: UserApi) : UserRepository {
         return try {
             api.updateUserProfile(login, userProfile)
         } catch (e: ApiException) {
+            println("API exception: ${e.status} - ${e.message}")
             throw e
         } catch (e: Exception) {
+            println("Unexpected exception: ${e.message}")
             throw e
         }
     }
