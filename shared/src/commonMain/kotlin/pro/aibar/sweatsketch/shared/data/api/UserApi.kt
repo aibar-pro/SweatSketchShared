@@ -22,6 +22,7 @@ interface UserApi {
     suspend fun createUserProfile(userProfile: UserProfileModel): ResponseMessageModel
     suspend fun getUserProfile(): UserProfileModel
     suspend fun updateUserProfile(login: String, userProfile: UserProfileModel): ResponseMessageModel
+    suspend fun createDefaultUserProfile()
 }
 
 class UserApiImpl(
@@ -40,6 +41,8 @@ class UserApiImpl(
             } else {
                 throw ApiException(response.status, response.bodyAsText())
             }
+        } catch (e: ApiException) {
+            throw e
         } catch (e: Exception) {
             throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
         }
@@ -58,8 +61,22 @@ class UserApiImpl(
             } else {
                 throw ApiException(response.status, response.bodyAsText())
             }
+        } catch (e: ApiException) {
+            throw e
         } catch (e: Exception) {
             throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
+        }
+    }
+
+    override suspend fun createDefaultUserProfile() {
+        val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
+        val newUserProfile = UserProfileModel(login)
+        try {
+            createUserProfile(newUserProfile)
+        } catch (e: ApiException) {
+            throw e
+        } catch (e: Exception) {
+            throw e
         }
     }
 
@@ -76,6 +93,8 @@ class UserApiImpl(
             } else {
                 throw ApiException(response.status, response.bodyAsText())
             }
+        } catch (e: ApiException) {
+            throw e
         } catch (e: Exception) {
             throw ApiException(HttpStatusCode.InternalServerError, e.message ?: "Unknown error")
         }
