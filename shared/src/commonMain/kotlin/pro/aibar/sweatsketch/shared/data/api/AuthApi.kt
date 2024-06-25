@@ -17,6 +17,7 @@ import pro.aibar.sweatsketch.shared.data.model.RefreshTokenModel
 import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
 import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
 import pro.aibar.sweatsketch.shared.util.KeyStorage
+import pro.aibar.sweatsketch.shared.util.SecureStorage
 import pro.aibar.sweatsketch.shared.util.TokenManager
 
 interface AuthApi {
@@ -97,6 +98,7 @@ class AuthApiImpl(
             }
             if (response.status == HttpStatusCode.OK) {
                 KeyStorage.clearLogin()
+                SecureStorage.clearRefreshToken()
                 response.body()
             } else {
                 throw ApiException(response.status, response.bodyAsText())
