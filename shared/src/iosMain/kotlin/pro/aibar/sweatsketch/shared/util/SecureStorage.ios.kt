@@ -2,6 +2,7 @@ package pro.aibar.sweatsketch.shared.util
 
 import io.ktor.utils.io.core.toByteArray
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.IntVar
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.allocArrayOf
@@ -16,12 +17,16 @@ import platform.CoreFoundation.CFDataGetLength
 import platform.CoreFoundation.CFDataRef
 import platform.CoreFoundation.CFDictionaryAddValue
 import platform.CoreFoundation.CFDictionaryCreateMutable
+import platform.CoreFoundation.CFMutableDictionaryRef
+import platform.CoreFoundation.CFNumberCreate
 import platform.CoreFoundation.CFRangeMake
 import platform.CoreFoundation.CFStringCreateWithCString
+import platform.CoreFoundation.CFStringRef
 import platform.CoreFoundation.CFTypeRef
 import platform.CoreFoundation.CFTypeRefVar
 import platform.CoreFoundation.kCFBooleanFalse
 import platform.CoreFoundation.kCFBooleanTrue
+import platform.CoreFoundation.kCFNumberIntType
 import platform.CoreFoundation.kCFStringEncodingUTF8
 import platform.Foundation.CFBridgingRetain
 import platform.Foundation.NSData
@@ -46,23 +51,25 @@ actual object SecureStorage {
 
     actual fun saveRefreshToken(token: String) {
         val tokenData = token.toByteArray().toNSData()
+        val query = createDictionary(
+            kSecClass to kSecClassGenericPassword,
+            kSecAttrAccount to refreshTokenKey.toCFType()
+        )
 
-        val query = CFDictionaryCreateMutable(null, 2, null, null)
-        CFDictionaryAddValue(query, kSecClass, kSecClassGenericPassword)
-        CFDictionaryAddValue(query, kSecAttrAccount, refreshTokenKey.toCFType())
-
-        val attributesToUpdate = CFDictionaryCreateMutable(null, 1, null, null)
-        CFDictionaryAddValue(attributesToUpdate, kSecValueData, tokenData.toCFType() )
+        val attributesToUpdate = createDictionary(
+            kSecValueData to tokenData.toCFType()
+        )
 
         // Try to update item
         var status = SecItemUpdate(query, attributesToUpdate)
 
         // If the item doesn't exist, add it
         if (status == errSecItemNotFound) {
-            val newItem = CFDictionaryCreateMutable(null, 3, null, null)
-            CFDictionaryAddValue(newItem, kSecClass, kSecClassGenericPassword)
-            CFDictionaryAddValue(newItem, kSecAttrAccount, refreshTokenKey.toCFType())
-            CFDictionaryAddValue(newItem, kSecValueData, tokenData.toCFType()  )
+            val newItem = createDictionary(
+                kSecClass to kSecClassGenericPassword,
+                kSecAttrAccount to refreshTokenKey.toCFType(),
+                kSecValueData to tokenData.toCFType()
+            )
 
             status = SecItemAdd(newItem, null)
         }
@@ -75,11 +82,12 @@ actual object SecureStorage {
     }
 
     actual fun getRefreshToken(): String? {
-        val query = CFDictionaryCreateMutable(null, 4, null, null)
-        CFDictionaryAddValue(query, kSecClass, kSecClassGenericPassword)
-        CFDictionaryAddValue(query, kSecAttrAccount, refreshTokenKey.toCFType())
-        CFDictionaryAddValue(query, kSecReturnData, kCFBooleanTrue)
-        CFDictionaryAddValue(query, kSecMatchLimit, kSecMatchLimitOne)
+        val query = createDictionary(
+            kSecClass to kSecClassGenericPassword,
+            kSecAttrAccount to refreshTokenKey.toCFType(),
+            kSecReturnData to kCFBooleanTrue,
+            kSecMatchLimit to kSecMatchLimitOne
+        )
 
         val dataRef = nativeHeap.alloc<CFTypeRefVar>()
         val status = SecItemCopyMatching(query, dataRef.ptr)
@@ -87,7 +95,7 @@ actual object SecureStorage {
         return if (status == errSecSuccess) {
             val cfData = dataRef.value?.let { it as? CFDataRef }
             if (cfData != null) {
-                val length = CFDataGetLength(cfData).toLong()
+                val length = CFDataGetLength(cfData)
                 val bytes = ByteArray(length.toInt())
                 bytes.usePinned { pinnedBytes ->
                     CFDataGetBytes(cfData, CFRangeMake(0, length), pinnedBytes.addressOf(0).reinterpret())
@@ -103,9 +111,10 @@ actual object SecureStorage {
     }
 
     actual fun clearRefreshToken() {
-        val query = CFDictionaryCreateMutable(null, 2, null, null)
-        CFDictionaryAddValue(query, kSecClass, kSecClassGenericPassword)
-        CFDictionaryAddValue(query, kSecAttrAccount, refreshTokenKey.toCFType())
+        val query = createDictionary(
+            kSecClass to kSecClassGenericPassword,
+            kSecAttrAccount to refreshTokenKey.toCFType()
+        )
 
         val status = SecItemDelete(query)
 
@@ -117,34 +126,30 @@ actual object SecureStorage {
     }
 }
 
-//@OptIn(ExperimentalForeignApi::class)
-//fun NSData.toByteArray(): ByteArray {
-//    return ByteArray(length.toInt()).apply {
-//        usePinned {
-//            memcpy(it.addressOf(0), bytes, length)
-//        }
-//    }
-//}
+@OptIn(ExperimentalForeignApi::class)
+fun createDictionary(vararg pairs: Pair<CFStringRef?, CFTypeRef?>): CFMutableDictionaryRef? {
+    val dict = CFDictionaryCreateMutable(null, pairs.size.toLong(), null, null)
+    pairs.forEach { (key, value) ->
+        CFDictionaryAddValue(dict, key, value)
+    }
+    return dict
+}
 
 @OptIn(ExperimentalForeignApi::class)
 fun ByteArray.toNSData(): NSData = memScoped {
     NSData.create(bytes = allocArrayOf(this@toNSData), length = this@toNSData.size.toULong())
 }
 
-//@OptIn(ExperimentalForeignApi::class)
-//fun createDictionary(vararg pairs: Pair<CFStringRef, Any?>): CFMutableDictionaryRef = memScoped {
-//    val dict = CFDictionaryCreateMutable(null, pairs.size.toLong(), null, null)
-//    pairs.forEach { (key, value) ->
-//        CFDictionaryAddValue(dict, key, value.toCFType())
-//    }
-//    dict!!
-//}
-
 @OptIn(ExperimentalForeignApi::class)
 fun Any?.toCFType(): CFTypeRef? = when (this) {
+    is CFTypeRef -> this
     is String -> CFStringCreateWithCString(null, this, kCFStringEncodingUTF8)
     is NSData -> CFBridgingRetain(this)
     is Boolean -> if (this) kCFBooleanTrue else kCFBooleanFalse
-//    is Int -> CFNumberCreate(null, kCFNumberIntType, this)
+    is Int -> memScoped {
+        val valuePtr = alloc<IntVar>()
+        valuePtr.value = this@toCFType
+        CFNumberCreate(null, kCFNumberIntType, valuePtr.ptr)
+    }
     else -> null
 }
