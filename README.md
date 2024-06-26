@@ -5,7 +5,7 @@ This is a Kotlin Multiplatform library to support my iOS application, SweatSketc
 
 ## Features
 The library has the following feature groups:
-- The first covers login and sign-up; it encapsulates \/auth\/login, \/auth\/refresh-token, and \/user routes. The access token received with \/auth\/* calls is stored in memory; once it expires, the library calls for a new one. The refresh token is saved in secure storage (Apple Keychain and Android secure storage).
+- The first covers login and sign-up; it encapsulates \/auth\/login, \/auth\/refresh-token, and \/user routes. The access token received with \/auth\/* calls is stored in memory; once it expires, the library calls for a new one. The refresh token is saved in secure storage (Apple Keychain and Android EncryptedSharedPreferences).
 - The second group encapsulates '/user/profile' calls to create, read, or update the user profiles.
 - The last one is about exporting and importing workouts and generating links for plan sharing.
 
