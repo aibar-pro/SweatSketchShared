@@ -21,7 +21,7 @@ interface UserApi {
     suspend fun createUser(userCredential: UserCredentialModel): ResponseMessageModel
     suspend fun createUserProfile(userProfile: UserProfileModel): ResponseMessageModel
     suspend fun getUserProfile(): UserProfileModel
-    suspend fun updateUserProfile(login: String, userProfile: UserProfileModel): ResponseMessageModel
+    suspend fun updateUserProfile(userProfile: UserProfileModel): ResponseMessageModel
     suspend fun createDefaultUserProfile()
 }
 
@@ -100,9 +100,13 @@ class UserApiImpl(
         }
     }
 
-    override suspend fun updateUserProfile(login: String, userProfile: UserProfileModel): ResponseMessageModel {
+    override suspend fun updateUserProfile(userProfile: UserProfileModel): ResponseMessageModel {
         val accessToken = authApi.getValidAccessToken()
         return try {
+            val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
+            if (login != userProfile.login) {
+                throw ApiException(HttpStatusCode.Unauthorized, "Profile login doesn't match authorized user")
+            }
             val response: HttpResponse = client.put("$baseUrl/user/profile/$login") {
                 header("Authorization", "Bearer $accessToken")
                 contentType(ContentType.Application.Json)

@@ -61,9 +61,9 @@ class UserRepositoryImpl(private val api: UserApi) : UserRepository {
     }
 
     @Throws(ApiException::class, Exception::class)
-    override suspend fun updateUserProfile(login: String, userProfile: UserProfileModel): ResponseMessageModel {
+    override suspend fun updateUserProfile(userProfile: UserProfileModel): ResponseMessageModel {
         return try {
-            api.updateUserProfile(login, userProfile)
+            api.updateUserProfile(userProfile)
         } catch (e: ApiException) {
             println("API exception: ${e.status} - ${e.message}")
             throw e

@@ -5,6 +5,7 @@ import pro.aibar.sweatsketch.shared.data.api.AuthApi
 import pro.aibar.sweatsketch.shared.data.model.AuthTokenModel
 import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
 import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
+import pro.aibar.sweatsketch.shared.util.KeyStorage
 
 class AuthRepositoryImpl(private val api: AuthApi) : AuthRepository {
     @Throws(ApiException::class, Exception::class)
@@ -37,7 +38,7 @@ class AuthRepositoryImpl(private val api: AuthApi) : AuthRepository {
 
     override suspend fun isLoggedIn(): Boolean {
         return try {
-            api.getValidAccessToken() != null
+            api.getValidAccessToken() != null && KeyStorage.getLogin() != null
         } catch (e: ApiException) {
             println("API exception: ${e.status} - ${e.message}")
             false
