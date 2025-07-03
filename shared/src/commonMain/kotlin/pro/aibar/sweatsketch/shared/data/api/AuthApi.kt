@@ -11,18 +11,16 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
-import pro.aibar.sweatsketch.shared.data.model.AuthTokenModel
-import pro.aibar.sweatsketch.shared.data.model.DeleteSessionRequest
-import pro.aibar.sweatsketch.shared.data.model.RefreshTokenModel
+import pro.aibar.sweatsketch.shared.data.model.AuthTokenDto
 import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
-import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
+import pro.aibar.sweatsketch.shared.data.model.UserCredentialDto
 import pro.aibar.sweatsketch.shared.util.KeyStorage
 import pro.aibar.sweatsketch.shared.util.SecureStorage
 import pro.aibar.sweatsketch.shared.util.TokenManager
 
 interface AuthApi {
-    suspend fun login(userCredential: UserCredentialModel): AuthTokenModel
-    suspend fun refreshToken(): AuthTokenModel
+    suspend fun login(userCredential: UserCredentialDto): AuthTokenDto
+    suspend fun refreshToken(): AuthTokenDto
     suspend fun getValidAccessToken(): String
     suspend fun logout(): ResponseMessageModel
 }
@@ -37,15 +35,16 @@ class AuthApiImpl(
             val newToken = refreshToken()
             saveToken(newToken)
         }
-        return tokenManager.getAccessToken() ?: throw ApiException(HttpStatusCode.Unauthorized, "No access token found")
+        return tokenManager.getAccessToken()
+            ?: throw ApiException(HttpStatusCode.Unauthorized, "No access token found")
     }
 
-    private fun saveToken(token: AuthTokenModel) {
+    private fun saveToken(token: AuthTokenDto) {
         tokenManager.saveAccessToken(token.accessToken, token.expiresIn)
         tokenManager.saveRefreshToken(token.refreshToken)
     }
 
-    override suspend fun login(userCredential: UserCredentialModel): AuthTokenModel {
+    override suspend fun login(userCredential: UserCredentialDto): AuthTokenDto {
         return try {
             val deviceId = KeyStorage.getDeviceId()
             val response: HttpResponse = client.post("$baseUrl/auth/login") {
@@ -55,7 +54,7 @@ class AuthApiImpl(
             }
             if (response.status == HttpStatusCode.OK) {
                 saveToken(response.body())
-                KeyStorage.saveLogin(userCredential.login)
+                KeyStorage.saveUserId(userCredential.login)
                 response.body()
             } else {
                 throw ApiException(response.status, response.bodyAsText())
@@ -67,13 +66,15 @@ class AuthApiImpl(
         }
     }
 
-    override suspend fun refreshToken(): AuthTokenModel {
-        val refreshToken = tokenManager.getRefreshToken() ?: throw ApiException(HttpStatusCode.Unauthorized, "No refresh token found in storage")
+    override suspend fun refreshToken(): AuthTokenDto {
         return try {
+            val refreshToken = tokenManager.getRefreshToken()
+                ?: throw ApiException(HttpStatusCode.Unauthorized, "No refresh token found in storage. Login required")
+
             val response: HttpResponse = client.post("$baseUrl/auth/refresh-token") {
-                contentType(ContentType.Application.Json)
-                setBody(RefreshTokenModel(refreshToken))
+                header("Authorization", "Bearer $refreshToken")
             }
+
             if (response.status == HttpStatusCode.OK) {
                 saveToken(response.body())
                 response.body()
@@ -89,15 +90,14 @@ class AuthApiImpl(
 
     override suspend fun logout(): ResponseMessageModel {
         return try {
-            val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
-            val deviceId = KeyStorage.getDeviceId()
+            val accessToken = getValidAccessToken()
+
             val response: HttpResponse = client.delete("$baseUrl/auth/sessions") {
-                header("deviceId", deviceId)
+                header("Authorization", "Bearer $accessToken")
                 contentType(ContentType.Application.Json)
-                setBody(DeleteSessionRequest(login))
             }
             if (response.status == HttpStatusCode.OK) {
-                KeyStorage.clearLogin()
+                KeyStorage.clearUserId()
                 SecureStorage.clearRefreshToken()
                 response.body()
             } else {

@@ -47,13 +47,13 @@ import platform.Security.kSecValueData
 
 @OptIn(ExperimentalForeignApi::class)
 actual object SecureStorage {
-    private const val refreshTokenKey = "refreshToken"
+    private const val REFRESH_TOKEN_KEY = "refreshToken"
 
     actual fun saveRefreshToken(token: String) {
         val tokenData = token.toByteArray().toNSData()
         val query = createDictionary(
             kSecClass to kSecClassGenericPassword,
-            kSecAttrAccount to refreshTokenKey.toCFType()
+            kSecAttrAccount to REFRESH_TOKEN_KEY.toCFType()
         )
 
         val attributesToUpdate = createDictionary(
@@ -67,7 +67,7 @@ actual object SecureStorage {
         if (status == errSecItemNotFound) {
             val newItem = createDictionary(
                 kSecClass to kSecClassGenericPassword,
-                kSecAttrAccount to refreshTokenKey.toCFType(),
+                kSecAttrAccount to REFRESH_TOKEN_KEY.toCFType(),
                 kSecValueData to tokenData.toCFType()
             )
 
@@ -84,7 +84,7 @@ actual object SecureStorage {
     actual fun getRefreshToken(): String? {
         val query = createDictionary(
             kSecClass to kSecClassGenericPassword,
-            kSecAttrAccount to refreshTokenKey.toCFType(),
+            kSecAttrAccount to REFRESH_TOKEN_KEY.toCFType(),
             kSecReturnData to kCFBooleanTrue,
             kSecMatchLimit to kSecMatchLimitOne
         )
@@ -113,7 +113,7 @@ actual object SecureStorage {
     actual fun clearRefreshToken() {
         val query = createDictionary(
             kSecClass to kSecClassGenericPassword,
-            kSecAttrAccount to refreshTokenKey.toCFType()
+            kSecAttrAccount to REFRESH_TOKEN_KEY.toCFType()
         )
 
         val status = SecItemDelete(query)

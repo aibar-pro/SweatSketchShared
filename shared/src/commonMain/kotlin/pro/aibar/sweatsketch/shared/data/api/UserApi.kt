@@ -13,16 +13,15 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import pro.aibar.sweatsketch.shared.data.model.ResponseMessageModel
-import pro.aibar.sweatsketch.shared.data.model.UserCredentialModel
-import pro.aibar.sweatsketch.shared.data.model.UserProfileModel
-import pro.aibar.sweatsketch.shared.util.KeyStorage
+import pro.aibar.sweatsketch.shared.data.model.UserCredentialDto
+import pro.aibar.sweatsketch.shared.data.model.UserProfileDto
 
 interface UserApi {
-    suspend fun createUser(userCredential: UserCredentialModel): ResponseMessageModel
-    suspend fun createUserProfile(userProfile: UserProfileModel): ResponseMessageModel
-    suspend fun getUserProfile(): UserProfileModel
-    suspend fun updateUserProfile(userProfile: UserProfileModel): ResponseMessageModel
-    suspend fun createDefaultUserProfile()
+    suspend fun createUser(userCredential: UserCredentialDto): ResponseMessageModel
+    suspend fun createUserProfile(userProfile: UserProfileDto): ResponseMessageModel
+    suspend fun getUserProfile(): UserProfileDto
+    suspend fun updateUserProfile(userProfile: UserProfileDto): ResponseMessageModel
+    suspend fun createDefaultUserProfile(login: String)
 }
 
 class UserApiImpl(
@@ -30,7 +29,7 @@ class UserApiImpl(
     private val baseUrl: String,
     private val authApi: AuthApi
 ) : UserApi {
-    override suspend fun createUser(userCredential: UserCredentialModel): ResponseMessageModel {
+    override suspend fun createUser(userCredential: UserCredentialDto): ResponseMessageModel {
         return try {
             val response: HttpResponse = client.post("$baseUrl/user") {
                 contentType(ContentType.Application.Json)
@@ -48,14 +47,15 @@ class UserApiImpl(
         }
     }
 
-    override suspend fun createUserProfile(userProfile: UserProfileModel): ResponseMessageModel {
-        val accessToken = authApi.getValidAccessToken()
+    override suspend fun createUserProfile(userProfile: UserProfileDto): ResponseMessageModel {
         return try {
+            val accessToken = authApi.getValidAccessToken()
             val response: HttpResponse = client.post("$baseUrl/user/profile") {
                 header("Authorization", "Bearer $accessToken")
                 contentType(ContentType.Application.Json)
                 setBody(userProfile)
             }
+
             if (response.status == HttpStatusCode.Created) {
                 response.body()
             } else {
@@ -68,9 +68,8 @@ class UserApiImpl(
         }
     }
 
-    override suspend fun createDefaultUserProfile() {
-        val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
-        val newUserProfile = UserProfileModel(login)
+    override suspend fun createDefaultUserProfile(login: String) {
+        val newUserProfile = UserProfileDto()
         try {
             createUserProfile(newUserProfile)
         } catch (e: ApiException) {
@@ -80,14 +79,14 @@ class UserApiImpl(
         }
     }
 
-    override suspend fun getUserProfile(): UserProfileModel {
-        val accessToken = authApi.getValidAccessToken()
+    override suspend fun getUserProfile(): UserProfileDto {
         return try {
-            val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
-            val response: HttpResponse = client.get("$baseUrl/user/profile/$login") {
+            val accessToken = authApi.getValidAccessToken()
+            val response: HttpResponse = client.get("$baseUrl/user/profile") {
                 header("Authorization", "Bearer $accessToken")
                 contentType(ContentType.Application.Json)
             }
+
             if (response.status == HttpStatusCode.OK) {
                 response.body()
             } else {
@@ -100,18 +99,15 @@ class UserApiImpl(
         }
     }
 
-    override suspend fun updateUserProfile(userProfile: UserProfileModel): ResponseMessageModel {
-        val accessToken = authApi.getValidAccessToken()
+    override suspend fun updateUserProfile(userProfile: UserProfileDto): ResponseMessageModel {
         return try {
-            val login = KeyStorage.getLogin() ?: throw ApiException(HttpStatusCode.Unauthorized, "No login found")
-            if (login != userProfile.login) {
-                throw ApiException(HttpStatusCode.Unauthorized, "Profile login doesn't match authorized user")
-            }
-            val response: HttpResponse = client.put("$baseUrl/user/profile/$login") {
+            val accessToken = authApi.getValidAccessToken()
+            val response: HttpResponse = client.put("$baseUrl/user/profile") {
                 header("Authorization", "Bearer $accessToken")
                 contentType(ContentType.Application.Json)
                 setBody(userProfile)
             }
+
             if (response.status == HttpStatusCode.OK) {
                 response.body()
             } else {
