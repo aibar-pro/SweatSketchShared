@@ -1,38 +1,49 @@
 package pro.aibar.sweatsketch.shared.util
 
 import android.content.Context
-import android.content.SharedPreferences
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.flow.first
 import java.util.UUID
 
-actual object KeyStorage {
-    private const val PREFS_NAME = "shared_prefs"
-    private const val DEVICE_ID_KEY = "device_id"
-    private const val LOGIN_KEY = "login"
+private const val PREFS_NAME = "shared_prefs"
+private val Context.dataStore by preferencesDataStore(name = PREFS_NAME)
 
-    private lateinit var sharedPreferences: SharedPreferences
+actual object KeyStorage {
+    private val DEVICE_ID_KEY = stringPreferencesKey("device_id")
+    private val USER_ID_KEY = stringPreferencesKey("login")
+
+    @Volatile
+    private var _ds: androidx.datastore.core.DataStore<Preferences>? = null
+    private val ds
+        get() = _ds ?: error("KeyStorage not initialised!")
 
     fun initialize(context: Context) {
-        sharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    }
-
-    actual fun getDeviceId(): String {
-        var deviceId = sharedPreferences.getString(DEVICE_ID_KEY, null)
-        if (deviceId == null) {
-            deviceId = UUID.randomUUID().toString()
-            sharedPreferences.edit().putString(DEVICE_ID_KEY, deviceId).apply()
+        if (_ds == null) {
+            _ds = context.applicationContext.dataStore
         }
-        return deviceId
     }
 
-    actual fun saveLogin(login: String) {
-        sharedPreferences.edit().putString(LOGIN_KEY, login).apply()
+    actual suspend fun getDeviceId(): String  {
+        var deviceId = ds.data.first()[DEVICE_ID_KEY]
+        if (deviceId != null) return deviceId
+
+        val newId = UUID.randomUUID().toString()
+        ds.edit { it[DEVICE_ID_KEY] = newId }
+        return newId
     }
 
-    actual fun getLogin(): String? {
-        return sharedPreferences.getString(LOGIN_KEY, null)
+    actual suspend fun saveUserId(userId: String) {
+        ds.edit { it[USER_ID_KEY] = userId }
     }
 
-    actual fun clearLogin() {
-        sharedPreferences.edit().remove(LOGIN_KEY).apply()
+    actual suspend fun getUserId(): String? {
+        return ds.data.first()[USER_ID_KEY]
+    }
+
+    actual suspend fun clearUserId() {
+        ds.edit { it.remove(USER_ID_KEY) }
     }
 }
